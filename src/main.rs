@@ -1,8 +1,13 @@
-use std::{fs, path::PathBuf, env};
+use std::{env, fs, path::PathBuf};
 
 fn main() -> Result<(), std::io::Error> {
     let args: Vec<String> = env::args().collect();
-    let cwd = args.get(1).map(|a| a.to_string()).unwrap_or(env::current_dir()?.to_str().expect("No directory provided").to_string());
+    let cwd = args.get(1).map(|a| a.to_string()).unwrap_or(
+        env::current_dir()?
+            .to_str()
+            .expect("No directory provided")
+            .to_string(),
+    );
     let repos = get_repos(&cwd)?;
 
     for r in repos {
@@ -23,24 +28,29 @@ fn get_repos(root: &str) -> Result<Vec<String>, std::io::Error> {
         return Ok(vec![root.to_string()]);
     }
 
-    return Ok(dirs.into_iter().flat_map(|dir| {
-        return get_repos(&dir).into_iter();
-    }).flatten().collect::<Vec<String>>());
+    return Ok(dirs
+        .into_iter()
+        .flat_map(|dir| {
+            return get_repos(&dir).into_iter();
+        })
+        .flatten()
+        .collect::<Vec<String>>());
 }
 
 fn get_dirs(root: &str) -> Result<Vec<String>, std::io::Error> {
     return Ok(fs::read_dir(root)?
-              .into_iter()
-              .filter_map(|entry| {
-                let path: PathBuf = entry.ok()?.path();
-                let metadata = fs::metadata(&path).ok()?;
+        .into_iter()
+        .filter_map(|entry| {
+            let path: PathBuf = entry.ok()?.path();
+            let metadata = fs::metadata(&path).ok()?;
 
-                if !metadata.is_dir() {
-                    return None;
-                }
+            if !metadata.is_dir() {
+                return None;
+            }
 
-                return Some(path.to_str()?.to_string());
-              }).collect::<Vec<String>>());
+            return Some(path.to_str()?.to_string());
+        })
+        .collect::<Vec<String>>());
 }
 
 fn has_git(dirs: &Vec<String>) -> bool {
